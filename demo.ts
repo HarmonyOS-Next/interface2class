@@ -1,6 +1,12 @@
+enum TYPE {
+  N,
+  B
+}
+
 interface Man {
   age: string
-  type: 0 | 1
+  type: 0 | 1,
+  test: TYPE
 }
 
 interface Person {
@@ -11,17 +17,17 @@ interface Person {
 }
 
 // auto gen →
-
 class ManModel implements Man {
   age: string = ''
   type: 0 | 1 = 0
+  test: TYPE = TYPE.N
 
   constructor(model: Man) {
     this.age = model.age
     this.type = model.type
+    this.test = model.test
   }
 }
-
 class PersonModel implements Person {
   name: string = ''
   age: number = 0

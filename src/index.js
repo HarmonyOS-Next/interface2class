@@ -23,8 +23,8 @@ program.version(`v${cliVersion}`);
 
 program.argument("<file path>").action((filePath) => {
   const str = fse.readFileSync(filePath, "utf8");
-  const result = genClass(str)
-  fse.writeFileSync(filePath, str + '\n' + result)
+  const result = genClass(str);
+  fse.writeFileSync(filePath, result);
 });
 
 program.parse(process.argv);
