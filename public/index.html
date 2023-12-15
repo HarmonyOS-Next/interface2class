@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interface to Class</title>
+  </head>
+  <body>
+    <textarea id="interface" cols="30" rows="10" placeholder="输入interface"></textarea>
+
+    <button id="btn">转换</button>
+
+    <textarea id="class" cols="30" rows="10" placeholder="输入interface"></textarea>
+
+    <script>
+      const interfaceStr = document.querySelector("#interface");
+
+      const classDom = document.querySelector("#class");
+      const btnDom = document.querySelector("#btn");
+
+      btnDom.addEventListener("click", () => {
+        console.log(interfaceStr.value);
+        if (interfaceStr.value) {
+          // fetch('./gen', { text: interfaceStr.value })
+          const headers = new Headers();
+          headers.append("content-type", "application/json");
+          fetch("./gen", { method: "post", headers, body: JSON.stringify({ text: interfaceStr.value }) })
+          .then((response) => response.json())
+          .then((res) => {
+            classDom.value = res.text;
+          });
+        }
+      });
+    </script>
+  </body>
+</html>
