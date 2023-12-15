@@ -6,7 +6,7 @@ const MAP = {
   boolean: "false",
 };
 
-const genClass = (code: string) => {
+export const genClass = (code) => {
   const ast = ts.parse(code);
 
   const root = ast.root();
@@ -48,45 +48,3 @@ const genClass = (code: string) => {
     }
   `;
 };
-
-import express from "express";
-import cors from "cors";
-import bodyParser from "body-parser";
-
-const app = express();
-
-app.use(express.static("./public"));
-app.use(bodyParser.json());
-app.use(cors());
-
-app.post("/gen", (req, res) => {
-  console.log(req.body);
-  const { text } = req.body;
-
-  res.json({ text: genClass(text) });
-});
-
-app.listen(3000, () => console.log("server ok"));
-
-// const source = `
-interface Person {
-  name: string;
-  age: number;
-  isMan: boolean;
-}
-// `;
-
-// console.log(genClass(source));
-
-// interface Person {
-//   name: string
-//   age: number
-//   isMan: boolean
-// }
-
-// class Person implements Person{
-//   name: string = 'jack'
-//   age: number = 10
-//   isMan: boolean = true
-
-// }
