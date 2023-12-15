@@ -1,40 +1,3 @@
-# interface2class
-
-一个通过 interface 生成 class 的命令行工具
-
-## 安装 
-
-```shell
-npm i interface2class -g
-```
-
-## 使用
-
-- 文件 `demo.ts`
-
-```typescript
-interface Man {
-  age: string
-  type: 0 | 1
-}
-
-interface Person {
-  name: string
-  age: number
-  foods: string[]
-  user: Man
-}
-```
-
-- 执行命令
-
-```shell
-i2c ./demo.ts
-```
-
-- 自动写入 `demo.ts`
-
-```typescript
 interface Man {
   age: string
   type: 0 | 1
@@ -72,4 +35,3 @@ class PersonModel implements Person {
     this.user = model.user
   }
 }
-```

@@ -1,6 +1,6 @@
 {
   "name": "interface2class",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "interface gen class",
   "type": "module",
   "main": "./src/index.js",
@@ -18,8 +18,9 @@
   },
   "dependencies": {
     "@ast-grep/napi": "^0.14.4",
-    "@inquirer/input": "^1.2.14",
+    "@inquirer/prompts": "^3.3.0",
     "commander": "^11.1.0",
-    "consola": "^3.2.3"
+    "consola": "^3.2.3",
+    "fs-extra": "^11.2.0"
   }
 }

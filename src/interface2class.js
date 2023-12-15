@@ -1,9 +1,72 @@
 import { ts } from "@ast-grep/napi";
 
-const MAP = {
+const VALUE_MAP = {
   string: "''",
   number: "0",
   boolean: "false",
+};
+
+const getSgNodeText = (sgNode, kind) => {
+  return sgNode.find({ rule: { kind } })?.text();
+};
+
+const getSgNodes = (sgNode, kind) => {
+  return sgNode.findAll({ rule: { kind } });
+};
+
+const getPropertyInfo = (sgNode) => {
+  const propertyName = getSgNodeText(sgNode, "property_identifier");
+  let propertyType = getSgNodeText(sgNode, "predefined_type");
+  let propertyValue = "";
+
+  // string number boolean
+  if (propertyType) {
+    propertyValue = VALUE_MAP[propertyType];
+  }
+
+  // union
+  if (getSgNodeText(sgNode, "union_type")) {
+    propertyType = getSgNodeText(sgNode, "union_type");
+    const unionArr = getSgNodes(sgNode, "literal_type");
+    propertyValue = unionArr[0]?.text()
+  }
+
+  // array
+  if (getSgNodeText(sgNode, "array_type")) {
+    propertyType = getSgNodeText(sgNode, "array_type");
+    propertyValue = "[]";
+  }
+
+  // other
+  if (getSgNodeText(sgNode, "type_identifier")) {
+    propertyType = getSgNodeText(sgNode, "type_identifier");
+    propertyValue = `new ${propertyType}Model({} as ${propertyType})`;
+  }
+
+  return { propertyName, propertyType, propertyValue };
+};
+
+export const genItemClass = (sgNode) => {
+  // class 的名称
+  const className = getSgNodeText(sgNode, "type_identifier");
+  // 属性列表
+  const propertyArr = getSgNodes(sgNode, "property_signature");
+
+  // 属性字符
+  let propertyStr = "";
+  // 构造器字符
+  let constructorStr = `  constructor(model: ${className}) {\n`;
+
+  // 变量属性列表
+  propertyArr.forEach((item) => {
+    const info = getPropertyInfo(item);
+    propertyStr += `  ${info.propertyName}: ${info.propertyType} = ${info.propertyValue}\n`;
+    constructorStr += `    this.${info.propertyName} = model.${info.propertyName}\n`;
+  });
+
+  constructorStr += `  }\n`;
+
+  return `class ${className}Model implements ${className} {\n` + propertyStr + "\n" + constructorStr + `}\n`;
 };
 
 export const genClass = (code) => {
@@ -11,40 +74,11 @@ export const genClass = (code) => {
 
   const root = ast.root();
 
-  const className = root.find({ rule: { kind: "type_identifier" } })?.text();
+  const interfaceArr = getSgNodes(root, "interface_declaration");
 
-  if (!className) return;
-
-  const propertyArr = root.findAll({ rule: { kind: "property_signature" } });
-
-  let propertyStr = "";
-  let constructorStr = `constructor(model: ${className}) {\n        `;
-  propertyArr.forEach((item, i) => {
-    const key = item.find({ rule: { kind: "property_identifier" } })?.text();
-    let type = item.find({ rule: { kind: "predefined_type" } })?.text();
-    if (!type) {
-      type = item.find({ rule: { kind: "union_type" } })?.text();
-      if (!type) {
-        type = item.find({ rule: { kind: "type_identifier" } })?.text();
-      }
-    }
-    if (key && type) {
-      let defValue = "";
-      if (MAP[type]) {
-        defValue = MAP[type];
-      } else {
-        defValue = item.find({ rule: { kind: "literal_type" } })?.text() || `new ${type}()`;
-      }
-      propertyStr += `${key}: ${type} = ${defValue}\n      `;
-      constructorStr += `this.${key} = model.${key}` + (propertyArr.length - 1 === i ? `\n      ` : `\n        `);
-    }
+  const classArr = interfaceArr.map((item) => {
+    return genItemClass(item);
   });
-  constructorStr += `}`;
 
-  return `
-    class ${className}Model implements ${className} {
-      ${propertyStr}
-      ${constructorStr}
-    }
-  `;
+  return classArr.join("\n");
 };
