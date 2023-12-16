@@ -38,7 +38,7 @@ const getPropertyInfo = (sgNode, enumArr) => {
   }
 
   // enum and other
-  if (getSgNodeText(sgNode, "type_identifier")) {
+  if (!getSgNodeText(sgNode, "array_type") && getSgNodeText(sgNode, "type_identifier")) {
     propertyType = getSgNodeText(sgNode, "type_identifier");
     const enumInfo = enumArr.find((e) => e.name === propertyType);
     if (enumInfo && enumInfo.name) {
@@ -106,5 +106,5 @@ export const genClass = (code) => {
     return genItemClass(item, enumArr);
   });
 
-  return code + newClassArr.join("");
+  return code + '\n' +newClassArr.join("");
 };
