@@ -17,6 +17,8 @@ interface Person {
 }
 
 // auto gen →
+
+
 class ManModel implements Man {
   age: string = ''
   type: 0 | 1 = 0
@@ -32,7 +34,7 @@ class PersonModel implements Person {
   name: string = ''
   age: number = 0
   foods: string[] = []
-  user: Man = new ManModel({} as Man)
+  user: ManModel = new ManModel({} as Man)
 
   constructor(model: Person) {
     this.name = model.name

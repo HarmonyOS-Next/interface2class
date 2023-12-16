@@ -44,7 +44,8 @@ const getPropertyInfo = (sgNode, enumArr) => {
     if (enumInfo && enumInfo.name) {
       propertyValue = enumInfo.value;
     } else {
-      propertyValue = `new ${propertyType}Model({} as ${propertyType})`;
+      propertyValue = `new ${createModel(propertyType)}({} as ${propertyType})`;
+      propertyType = createModel(propertyType)
     }
   }
 
