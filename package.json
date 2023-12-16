@@ -1,6 +1,6 @@
 {
   "name": "interface2class",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "interface gen class",
   "type": "module",
   "main": "./src/index.js",

@@ -63,7 +63,7 @@ class PersonModel implements Person {
   name: string = ''
   age: number = 0
   foods: string[] = []
-  user: ManModel = new ManModel({} as Man)
+  user: Man = new ManModel({} as Man)
 
   constructor(model: Person) {
     this.name = model.name

@@ -74,7 +74,7 @@ export const genItemClass = (sgNode, enumArr) => {
 
   constructorStr += `  }\n`;
 
-  return `class ${createModel(className)} implements ${className} {\n` + propertyStr + "\n" + constructorStr + `}\n`;
+  return `export class ${createModel(className)} implements ${className} {\n` + propertyStr + "\n" + constructorStr + `}\n`;
 };
 
 export const genClass = (code) => {
@@ -101,11 +101,11 @@ export const genClass = (code) => {
       return modelName === createModel(className);
     });
     if (oldClass) {
-      code = code.replace(oldClass.text() + "\n", "");
+      code = code.replace('export ' + oldClass.text() + "\n", "").replace(oldClass.text() + "\n", "")
     }
     // 生成新的class
     return genItemClass(item, enumArr);
   });
 
-  return code + '\n' +newClassArr.join("");
+  return code.padEnd('\n') +newClassArr.join("");
 };

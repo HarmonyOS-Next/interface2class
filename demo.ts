@@ -17,9 +17,7 @@ interface Person {
 }
 
 // auto gen →
-
-
-class ManModel implements Man {
+export class ManModel implements Man {
   age: string = ''
   type: 0 | 1 = 0
   test: TYPE = TYPE.N
@@ -30,11 +28,11 @@ class ManModel implements Man {
     this.test = model.test
   }
 }
-class PersonModel implements Person {
+export class PersonModel implements Person {
   name: string = ''
   age: number = 0
   foods: string[] = []
-  user: ManModel = new ManModel({} as Man)
+  user: Man = new ManModel({} as Man)
 
   constructor(model: Person) {
     this.name = model.name
