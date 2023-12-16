@@ -6,6 +6,8 @@ const VALUE_MAP = {
   boolean: "false",
 };
 
+const BUILT_TYPE = [ 'Resource', 'ResourceStr' ]
+
 const getSgNodeText = (sgNode, kind) => {
   return sgNode.find({ rule: { kind } })?.text();
 };
@@ -38,13 +40,19 @@ const getPropertyInfo = (sgNode, enumArr) => {
   }
 
   // enum and other
-  if (!getSgNodeText(sgNode, "array_type") && getSgNodeText(sgNode, "type_identifier")) {
+  if (getSgNodeText(sgNode, "type_identifier")) {
     propertyType = getSgNodeText(sgNode, "type_identifier");
     const enumInfo = enumArr.find((e) => e.name === propertyType);
     if (enumInfo && enumInfo.name) {
       propertyValue = enumInfo.value;
     } else {
-      propertyValue = `new ${createModel(propertyType)}({} as ${propertyType})`;
+
+      // 如果是内置对象过滤
+      if (BUILT_TYPE.includes(propertyType)) {
+        propertyValue = "''"
+      } else {
+        propertyValue = `new ${createModel(propertyType)}({} as ${propertyType})`;
+      }
       // propertyType = createModel(propertyType)
     }
   }
