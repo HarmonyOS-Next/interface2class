@@ -22,9 +22,16 @@ program.version(`v${cliVersion}`);
 // });
 
 program.argument("<file path>").action((filePath) => {
-  const str = fse.readFileSync(filePath, "utf8");
-  const result = genClass(str);
-  fse.writeFileSync(filePath, result);
+  try {
+    consola.start('Class Generate ...')
+    const str = fse.readFileSync(filePath, "utf8");
+    const result = genClass(str);
+    fse.writeFileSync(filePath, result);
+    consola.success(`Class Generate Successful`)
+    consola.box('Tip: The file has been modified')
+  } catch (e) {
+    consola.error(e)
+  }
 });
 
 program.parse(process.argv);

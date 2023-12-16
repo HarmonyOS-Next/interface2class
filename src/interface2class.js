@@ -48,7 +48,6 @@ const getPropertyInfo = (sgNode, enumArr) => {
     }
   }
 
-  console.log('------', { propertyName, propertyType, propertyValue })
   return { propertyName, propertyType, propertyValue };
 };
 
