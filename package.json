@@ -1,6 +1,6 @@
 {
   "name": "interface2class",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "interface gen class",
   "type": "module",
   "main": "./src/index.js",
@@ -10,7 +10,13 @@
   "scripts": {
     "i2c": "node ./src/index.js"
   },
-  "keywords": [],
+  "keywords": [
+    "interface",
+    "generate",
+    "class",
+    "typescript",
+    "ArtTS"
+  ],
   "author": "zhousg",
   "license": "MIT",
   "repository": {

@@ -1,43 +1,56 @@
-enum TYPE {
-  N,
-  B
+enum Gender {
+  MAN = 'men',
+  WOMAN = 'women'
 }
 
-interface Man {
-  age: string
-  type: 0 | 1,
-  test: TYPE
+interface Response {
+  code: number
+  message: string
+  data: User
 }
 
-interface Person {
-  name: string
+interface User {
+  nickname: string
   age: number
-  foods: string[]
-  user: Man
+  avatar: ResourceStr
+  createAt: Date 
+  gender: Gender
+  hobby: string[]
+  follows: User[]
+  isValid: 0 | 1
 }
 
 // auto gen →
-export class ManModel implements Man {
-  age: string = ''
-  type: 0 | 1 = 0
-  test: TYPE = TYPE.N
 
-  constructor(model: Man) {
-    this.age = model.age
-    this.type = model.type
-    this.test = model.test
+export class ResponseModel implements Response {
+  code: number = 0
+  message: string = ''
+  data: User = new UserModel({} as User)
+
+  constructor(model: Response) {
+    this.code = model.code
+    this.message = model.message
+    this.data = model.data
   }
 }
-export class PersonModel implements Person {
-  name: string = ''
+export class UserModel implements User {
+  nickname: string = ''
   age: number = 0
-  foods: string[] = []
-  user: Man = new ManModel({} as Man)
+  avatar: ResourceStr = ''
+  createAt: Date = new Date()
+  gender: Gender = Gender.MAN
+  hobby: string[] = []
+  follows: User[] = []
+  isValid: 0 | 1 = 0
 
-  constructor(model: Person) {
-    this.name = model.name
+  constructor(model: User) {
+    this.nickname = model.nickname
     this.age = model.age
-    this.foods = model.foods
-    this.user = model.user
+    this.avatar = model.avatar
+    this.createAt = model.createAt
+    this.gender = model.gender
+    this.hobby = model.hobby
+    this.follows = model.follows
+    this.isValid = model.isValid
   }
 }

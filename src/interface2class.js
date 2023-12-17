@@ -6,7 +6,7 @@ const VALUE_MAP = {
   boolean: "false",
 };
 
-const BUILT_TYPE = [ 'Resource', 'ResourceStr' ]
+const BUILT_TYPE = ["Resource", "ResourceStr"];
 
 const getSgNodeText = (sgNode, kind) => {
   return sgNode.find({ rule: { kind } })?.text();
@@ -16,53 +16,62 @@ const getSgNodes = (sgNode, kind) => {
   return sgNode.findAll({ rule: { kind } });
 };
 
+const createModel = (className) => `${className}Model`;
+
+const getPropertyValue = (type, enumArr) => {
+  const enumInfo = enumArr.find((e) => e.name === type);
+  if (enumInfo && enumInfo.name) {
+    return enumInfo.value;
+  } else {
+    if (type === "ResourceStr") {
+      return `''`;
+    } else if (type === "Date") {
+      return `new Date()`;
+    } else {
+      return `new ${createModel(type)}({} as ${type})`;
+    }
+  }
+};
+
 const getPropertyInfo = (sgNode, enumArr) => {
-  const propertyName = getSgNodeText(sgNode, "property_identifier");
-  let propertyType = getSgNodeText(sgNode, "predefined_type");
+  const propertyName = sgNode.child(0).text();
+  const propertyFullType = sgNode.child(1).child(1);
+  const propertyType = propertyFullType.text();
   let propertyValue = "";
 
   // string number boolean
-  if (propertyType) {
+  if (propertyFullType.kind() === "predefined_type") {
     propertyValue = VALUE_MAP[propertyType];
   }
-
-  // union
-  if (getSgNodeText(sgNode, "union_type")) {
-    propertyType = getSgNodeText(sgNode, "union_type");
-    const unionArr = getSgNodes(sgNode, "literal_type");
-    propertyValue = unionArr[0]?.text();
-  }
-
   // array
-  if (getSgNodeText(sgNode, "array_type")) {
-    propertyType = getSgNodeText(sgNode, "array_type");
+  if (propertyFullType.kind() === "array_type") {
     propertyValue = "[]";
   }
-
-  // enum and other
-  if (getSgNodeText(sgNode, "type_identifier")) {
-    propertyType = getSgNodeText(sgNode, "type_identifier");
-    const enumInfo = enumArr.find((e) => e.name === propertyType);
-    if (enumInfo && enumInfo.name) {
-      propertyValue = enumInfo.value;
+  // union
+  if (propertyFullType.kind() === "union_type") {
+    const literal = getSgNodeText(propertyFullType, "literal_type");
+    if (literal) {
+      propertyValue = literal;
     } else {
-
-      // 如果是内置对象过滤
-      if (BUILT_TYPE.includes(propertyType)) {
-        propertyValue = "''"
+      const predefined = getSgNodeText(propertyFullType, "predefined_type");
+      if (predefined) {
+        propertyValue = VALUE_MAP[predefined];
       } else {
-        propertyValue = `new ${createModel(propertyType)}({} as ${propertyType})`;
+        // enum and interface
+        const type = getSgNodeText(propertyFullType, "type_identifier");
+        propertyValue = getPropertyValue(type, enumArr);
       }
-      // propertyType = createModel(propertyType)
     }
+  }
+  // enum and interface
+  if (propertyFullType.kind() === "type_identifier") {
+    propertyValue = getPropertyValue(propertyFullType.text(), enumArr);
   }
 
   return { propertyName, propertyType, propertyValue };
 };
 
-const createModel = (className) => `${className}Model`;
-
-export const genItemClass = (sgNode, enumArr) => {
+export const genItemClass = (sgNode, enumArr, hasObserved) => {
   // class 的名称
   const className = getSgNodeText(sgNode, "type_identifier");
   // 属性列表
@@ -82,7 +91,15 @@ export const genItemClass = (sgNode, enumArr) => {
 
   constructorStr += `  }\n`;
 
-  return `export class ${createModel(className)} implements ${className} {\n` + propertyStr + "\n" + constructorStr + `}\n`;
+  const observedStr = hasObserved ? "@Observed\n" : "";
+
+  return (
+    `${observedStr}export class ${createModel(className)} implements ${className} {\n` +
+    propertyStr +
+    "\n" +
+    constructorStr +
+    `}\n`
+  );
 };
 
 export const genClass = (code) => {
@@ -105,15 +122,27 @@ export const genClass = (code) => {
     // 如果已经有class删除
     const className = getSgNodeText(item, "type_identifier");
     const oldClass = oldClassArr.find((c) => {
-      const modelName = getSgNodeText(c, "type_identifier");
+      const modelName = c.child(1)?.text();
       return modelName === createModel(className);
     });
+    let hasObserved = false;
     if (oldClass) {
-      code = code.replace('export ' + oldClass.text() + "\n", "").replace(oldClass.text() + "\n", "")
+      const exportSgNode = oldClass?.prev();
+      const decoratorSgNode = exportSgNode?.prev();
+      if (exportSgNode) {
+        code = code.replace(oldClass.parent()?.text() + "\n", "");
+      }
+      if (decoratorSgNode) {
+        hasObserved = true;
+      }
     }
     // 生成新的class
-    return genItemClass(item, enumArr);
+    return genItemClass(item, enumArr, hasObserved);
   });
 
-  return code.padEnd('\n') +newClassArr.join("");
+  if (!/\n$/.test(code)) {
+    code += "\n";
+  }
+
+  return code + newClassArr.join("");
 };
