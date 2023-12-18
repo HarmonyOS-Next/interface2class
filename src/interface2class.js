@@ -35,6 +35,10 @@ const getPropertyValue = (type, enumArr) => {
 
 const getPropertyInfo = (sgNode, enumArr) => {
   const propertyName = sgNode.child(0).text();
+
+  const isOptional = sgNode.child(1).text() === '?'
+  if (isOptional) throw new Error('Syntax Error: optional properties are not allowed , Recommended `name?: string →→→ name: string | null`')
+  
   const propertyFullType = sgNode.child(1).child(1);
   const propertyType = propertyFullType.text();
   let propertyValue = "";
@@ -47,11 +51,18 @@ const getPropertyInfo = (sgNode, enumArr) => {
   if (propertyFullType.kind() === "array_type") {
     propertyValue = "[]";
   }
+
+  // literal
+  if (propertyFullType.kind() === "literal_type") {
+    propertyValue = propertyType
+  }
+
   // union
   if (propertyFullType.kind() === "union_type") {
     const literal = getSgNodeText(propertyFullType, "literal_type");
     if (literal) {
-      propertyValue = literal;
+      const hasNull = getSgNodeText(propertyFullType, "null");
+      propertyValue = hasNull || literal;
     } else {
       const predefined = getSgNodeText(propertyFullType, "predefined_type");
       if (predefined) {
@@ -72,17 +83,17 @@ const getPropertyInfo = (sgNode, enumArr) => {
 };
 
 export const genItemClass = (sgNode, enumArr, hasObserved) => {
-  // class 的名称
+  // class name
   const className = getSgNodeText(sgNode, "type_identifier");
-  // 属性列表
+  // property arr
   const propertyArr = getSgNodes(sgNode, "property_signature");
 
-  // 属性字符
+  // all property str
   let propertyStr = "";
-  // 构造器字符
+  // all constructor str
   let constructorStr = `  constructor(model: ${className}) {\n`;
 
-  // 变量属性列表
+  // for each every property
   propertyArr.forEach((item) => {
     const info = getPropertyInfo(item, enumArr);
     propertyStr += `  ${info.propertyName}: ${info.propertyType} = ${info.propertyValue}\n`;
@@ -111,7 +122,7 @@ export const genClass = (code) => {
 
   const interfaceArr = getSgNodes(root, "interface_declaration");
 
-  // 当前文件 enum
+  // current file enum
   const enumArr = getSgNodes(root, "enum_declaration").map((e) => {
     const name = getSgNodeText(e, "identifier");
     const value = `${name}.` + getSgNodeText(e, "property_identifier");
@@ -119,7 +130,7 @@ export const genClass = (code) => {
   });
 
   const newClassArr = interfaceArr.map((item) => {
-    // 如果已经有class删除
+    // has class remove
     const className = getSgNodeText(item, "type_identifier");
     const oldClass = oldClassArr.find((c) => {
       const modelName = c.child(1)?.text();
