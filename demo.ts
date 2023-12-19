@@ -1,3 +1,5 @@
+type ResourceStr = ''
+
 enum Gender {
   MAN = 'men',
   WOMAN = 'women'

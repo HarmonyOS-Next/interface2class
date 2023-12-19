@@ -102,3 +102,49 @@ export class UserModel implements User {
   }
 }
 ```
+
+## 格式化 Interface 
+
+如果出现生成 class 失败，请格式化后再生成
+
+- 文件 `demo.ts`
+```typescript
+/**
+* 报文数据
+*/
+export interface Data {
+  /**
+   * 总页数
+   */
+  pageTotal?: number;
+  /**
+   * 数据集合
+   */
+  rows?: Row[];
+  /**
+   * 总数
+   */
+  total?: number;
+  [property: string]: any;
+}
+```
+
+- 执行命令
+
+```shell
+i2c format ./demo.ts
+```
+
+- 格式化 `demo.ts`
+
+```typescript
+/** 报文数据 */
+export interface Data {
+  /** 总页数 */
+  pageTotal: number | null;
+  /** 数据集合 */
+  rows: Row[] | null;
+  /** 总数 */
+  total: number | null;
+}
+```

@@ -147,7 +147,7 @@ export const genClass = (code) => {
         hasObserved = true;
       }
     }
-    // 生成新的class
+    // create new class
     return genItemClass(item, enumArr, hasObserved);
   });
 
