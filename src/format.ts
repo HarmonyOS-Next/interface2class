@@ -1,23 +1,29 @@
-import { ts } from "@ast-grep/napi";
+import { SgNode, ts } from "@ast-grep/napi";
 import MagicString from "magic-string";
 
-/**
- * @param { import('@ast-grep/napi').SgNode } sgNode - ast node
- * @param { string } kind - kind string
- */
-export const findAllNodeByKind = (sgNode, kind) => sgNode.findAll({ rule: { kind } });
+type updateStringItem = {
+  start: number;
+  end: number;
+  text: string;
+};
 
 /**
  * @param { import('@ast-grep/napi').SgNode } sgNode - ast node
  * @param { string } kind - kind string
  */
-export const findNodeByKind = (sgNode, kind) => sgNode.find({ rule: { kind } });
+export const findAllNodeByKind = (sgNode: SgNode, kind: string) => sgNode.findAll({ rule: { kind } });
+
+/**
+ * @param { import('@ast-grep/napi').SgNode } sgNode - ast node
+ * @param { string } kind - kind string
+ */
+export const findNodeByKind = (sgNode: SgNode, kind: string) => sgNode.find({ rule: { kind } });
 
 /**
  * @param { string } code - code string
  * @returns
  */
-export const formatInterface = (code) => {
+export const formatInterface = (code: string) => {
   const ast = ts.parse(code);
 
   const root = ast.root();
@@ -29,12 +35,12 @@ export const formatInterface = (code) => {
   /**
    * @type {{ start: number; end: number; text: string}[]}
    */
-  const updateStrings = [];
+  const updateStrings: updateStringItem[] = [];
   /**
    * @param { import('@ast-grep/napi').SgNode } sgNode - ast node
    * @param { string } text - text string
    */
-  const pushUpdateStrings = (sgNode, text) => {
+  const pushUpdateStrings = (sgNode: SgNode, text: string) => {
     if (sgNode) {
       const { start, end } = sgNode.range();
       updateStrings.push({
@@ -48,7 +54,7 @@ export const formatInterface = (code) => {
   // 1. handle all comment
   commentNodes.forEach((item) => {
     const lines = item?.text()?.split("\n");
-    const text = lines?.[1]?.replace("*", "").trim()
+    const text = lines?.[1]?.replace(/\*/, "").trim();
     const commentText = text ? `/** ${text} */` : "";
     if (commentText) {
       pushUpdateStrings(item, commentText);
@@ -59,15 +65,15 @@ export const formatInterface = (code) => {
   interfaceNodes.forEach((item) => {
     const propertyNodes = findAllNodeByKind(item, "property_signature");
     propertyNodes.forEach((pro) => {
-      if (pro.child(1).text() === '?') {
+      if (pro.child(1)?.text() === "?") {
         // update optional
-        const optionalNode = pro.child(1)
-        pushUpdateStrings(optionalNode, '')
+        const optionalNode = pro.child(1)!;
+        pushUpdateStrings(optionalNode, "");
         // update type
-        const typeNode = pro.child(2)
-        const nullNode = findNodeByKind(typeNode, 'null')
+        const typeNode = pro.child(2)!;
+        const nullNode = findNodeByKind(typeNode, "null");
         if (!nullNode) {
-          pushUpdateStrings(typeNode, typeNode.text() + ' | null')
+          pushUpdateStrings(typeNode, typeNode.text() + " | null");
         }
       }
     });
@@ -77,7 +83,7 @@ export const formatInterface = (code) => {
   updateStrings.forEach((item) => {
     s.update(item.start, item.end, item.text);
   });
-  s.replaceAll('  [property: string]: any;\n', '')
+  s.replaceAll("  [property: string]: any;\n", "");
 
   return s.toString();
 };

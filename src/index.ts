@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { cliVersion } from "./version.js";
+import { cliVersion } from "./version.ts";
 import fse from "fs-extra";
 import pc from "picocolors";
-import { genClass } from "./interface2class.js";
-import { formatInterface } from "./format.js";
+import { genClass } from "./interface2class.ts";
+import { formatInterface } from "./format.ts";
 
 const program = new Command();
 
@@ -15,11 +15,12 @@ program.argument("<file path>").action((filePath) => {
   try {
     console.log(pc.magenta("◐"), "Class Generate ...");
     const str = fse.readFileSync(filePath, "utf8");
-    const result = genClass(str);
+    const formatStr = formatInterface(str)
+    const result = genClass(formatStr);
     fse.writeFileSync(filePath, result);
     console.log(pc.green("✔"), `Class Generate Successful`);
   } catch (e) {
-    console.log(pc.bgRed("Error"), pc.red(e.message || "Class Generate Fail"));
+    console.log(pc.bgRed("Error"), pc.red((e as Error).message || "Class Generate Fail"));
   }
 });
 
@@ -34,7 +35,7 @@ program
       fse.writeFileSync(filePath, result);
       console.log(pc.green("✔"), `Interface Format Successful`);
     } catch (e) {
-      console.log(pc.bgRed("Error"), pc.red(e.message || "Interface Format Fail"));
+      console.log(pc.bgRed("Error"), pc.red((e as Error).message || "Interface Format Fail"));
     }
   });
 

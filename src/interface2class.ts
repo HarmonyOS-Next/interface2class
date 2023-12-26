@@ -1,4 +1,4 @@
-import { ts } from "@ast-grep/napi";
+import { type SgNode, ts } from "@ast-grep/napi";
 
 const VALUE_MAP = {
   string: "''",
@@ -6,19 +6,26 @@ const VALUE_MAP = {
   boolean: "false",
 };
 
+type ValueType = keyof typeof VALUE_MAP;
+
+type EnumItem = {
+  name: string;
+  value: string;
+};
+
 const BUILT_TYPE = ["Resource", "ResourceStr"];
 
-const getSgNodeText = (sgNode, kind) => {
+const getSgNodeText = (sgNode: SgNode, kind: string) => {
   return sgNode.find({ rule: { kind } })?.text();
 };
 
-const getSgNodes = (sgNode, kind) => {
+const getSgNodes = (sgNode: SgNode, kind: string) => {
   return sgNode.findAll({ rule: { kind } });
 };
 
-const createModel = (className) => `${className}Model`;
+const createModel = (className: string) => `${className}Model`;
 
-const getPropertyValue = (type, enumArr) => {
+const getPropertyValue = (type: string, enumArr: EnumItem[]) => {
   const enumInfo = enumArr.find((e) => e.name === type);
   if (enumInfo && enumInfo.name) {
     return enumInfo.value;
@@ -33,56 +40,57 @@ const getPropertyValue = (type, enumArr) => {
   }
 };
 
-const getPropertyInfo = (sgNode, enumArr) => {
-  const propertyName = sgNode.child(0).text();
+const getPropertyInfo = (sgNode: SgNode, enumArr: EnumItem[]) => {
+  const propertyName = sgNode.child(0)?.text();
 
-  const isOptional = sgNode.child(1).text() === '?'
-  if (isOptional) throw new Error('Syntax Error: optional properties are not allowed , Recommended `name?: string →→→ name: string | null`')
-  
-  const propertyFullType = sgNode.child(1).child(1);
-  const propertyType = propertyFullType.text();
+  const isOptional = sgNode.child(1)?.text() === "?";
+  if (isOptional)
+    throw new Error("Syntax Error: optional properties are not allowed , Recommended `name?: string →→→ name: string | null`");
+
+  const propertyFullType = sgNode.child(1)?.child(1);
+  const propertyType = propertyFullType?.text() as ValueType;
   let propertyValue = "";
 
   // string number boolean
-  if (propertyFullType.kind() === "predefined_type") {
+  if (propertyFullType?.kind() === "predefined_type") {
     propertyValue = VALUE_MAP[propertyType];
   }
   // array
-  if (propertyFullType.kind() === "array_type") {
+  if (propertyFullType?.kind() === "array_type") {
     propertyValue = "[]";
   }
 
   // literal
-  if (propertyFullType.kind() === "literal_type") {
-    propertyValue = propertyType
+  if (propertyFullType?.kind() === "literal_type") {
+    propertyValue = propertyType;
   }
 
   // union
-  if (propertyFullType.kind() === "union_type") {
+  if (propertyFullType?.kind() === "union_type") {
     const literal = getSgNodeText(propertyFullType, "literal_type");
     if (literal) {
       const hasNull = getSgNodeText(propertyFullType, "null");
       propertyValue = hasNull || literal;
     } else {
-      const predefined = getSgNodeText(propertyFullType, "predefined_type");
+      const predefined = getSgNodeText(propertyFullType, "predefined_type") as ValueType;
       if (predefined) {
         propertyValue = VALUE_MAP[predefined];
       } else {
         // enum and interface
         const type = getSgNodeText(propertyFullType, "type_identifier");
-        propertyValue = getPropertyValue(type, enumArr);
+        propertyValue = getPropertyValue(type!, enumArr);
       }
     }
   }
   // enum and interface
-  if (propertyFullType.kind() === "type_identifier") {
+  if (propertyFullType?.kind() === "type_identifier") {
     propertyValue = getPropertyValue(propertyFullType.text(), enumArr);
   }
 
   return { propertyName, propertyType, propertyValue };
 };
 
-export const genItemClass = (sgNode, enumArr, hasObserved) => {
+export const genItemClass = (sgNode: SgNode, enumArr: EnumItem[], hasObserved: boolean) => {
   // class name
   const className = getSgNodeText(sgNode, "type_identifier");
   // property arr
@@ -105,7 +113,7 @@ export const genItemClass = (sgNode, enumArr, hasObserved) => {
   const observedStr = hasObserved ? "@Observed\n" : "";
 
   return (
-    `${observedStr}export class ${createModel(className)} implements ${className} {\n` +
+    `${observedStr}export class ${createModel(className!)} implements ${className} {\n` +
     propertyStr +
     "\n" +
     constructorStr +
@@ -113,7 +121,7 @@ export const genItemClass = (sgNode, enumArr, hasObserved) => {
   );
 };
 
-export const genClass = (code) => {
+export const genClass = (code: string) => {
   const ast = ts.parse(code);
 
   const root = ast.root();
@@ -123,8 +131,8 @@ export const genClass = (code) => {
   const interfaceArr = getSgNodes(root, "interface_declaration");
 
   // current file enum
-  const enumArr = getSgNodes(root, "enum_declaration").map((e) => {
-    const name = getSgNodeText(e, "identifier");
+  const enumArr: EnumItem[] = getSgNodes(root, "enum_declaration").map((e) => {
+    const name = getSgNodeText(e, "identifier")!;
     const value = `${name}.` + getSgNodeText(e, "property_identifier");
     return { name, value };
   });
@@ -134,7 +142,7 @@ export const genClass = (code) => {
     const className = getSgNodeText(item, "type_identifier");
     const oldClass = oldClassArr.find((c) => {
       const modelName = c.child(1)?.text();
-      return modelName === createModel(className);
+      return modelName === createModel(className!);
     });
     let hasObserved = false;
     if (oldClass) {
