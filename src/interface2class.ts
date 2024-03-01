@@ -25,7 +25,7 @@ const getSgNodes = (sgNode: SgNode, kind: string) => {
 
 const createModel = (className: string) => `${className}Model`;
 
-const getPropertyValue = (type: string, enumArr: EnumItem[]) => {
+const getPropertyValue = (type: string, enumArr: EnumItem[], simple: boolean = false) => {
   const enumInfo = enumArr.find((e) => e.name === type);
   if (enumInfo && enumInfo.name) {
     return enumInfo.value;
@@ -35,12 +35,16 @@ const getPropertyValue = (type: string, enumArr: EnumItem[]) => {
     } else if (type === "Date") {
       return `new Date()`;
     } else {
-      return `new ${createModel(type)}({} as ${type})`;
+      if (simple) {
+        return `new ${createModel(type)}()`;
+      } else {
+        return `new ${createModel(type)}({} as ${type})`;
+      }
     }
   }
 };
 
-const getPropertyInfo = (sgNode: SgNode, enumArr: EnumItem[]) => {
+const getPropertyInfo = (sgNode: SgNode, enumArr: EnumItem[], simple: boolean) => {
   const propertyName = sgNode.child(0)?.text();
 
   const isOptional = sgNode.child(1)?.text() === "?";
@@ -78,19 +82,19 @@ const getPropertyInfo = (sgNode: SgNode, enumArr: EnumItem[]) => {
       } else {
         // enum and interface
         const type = getSgNodeText(propertyFullType, "type_identifier");
-        propertyValue = getPropertyValue(type!, enumArr);
+        propertyValue = getPropertyValue(type!, enumArr, simple);
       }
     }
   }
   // enum and interface
   if (propertyFullType?.kind() === "type_identifier") {
-    propertyValue = getPropertyValue(propertyFullType.text(), enumArr);
+    propertyValue = getPropertyValue(propertyFullType.text(), enumArr, simple);
   }
 
   return { propertyName, propertyType, propertyValue };
 };
 
-export const genItemClass = (sgNode: SgNode, enumArr: EnumItem[], hasObserved: boolean) => {
+export const genItemClass = (sgNode: SgNode, enumArr: EnumItem[], hasObserved: boolean, simple: boolean) => {
   // class name
   const className = getSgNodeText(sgNode, "type_identifier");
   // property arr
@@ -103,7 +107,7 @@ export const genItemClass = (sgNode: SgNode, enumArr: EnumItem[], hasObserved: b
 
   // for each every property
   propertyArr.forEach((item) => {
-    const info = getPropertyInfo(item, enumArr);
+    const info = getPropertyInfo(item, enumArr, simple);
     propertyStr += `  ${info.propertyName}: ${info.propertyType} = ${info.propertyValue}\n`;
     constructorStr += `    this.${info.propertyName} = model.${info.propertyName}\n`;
   });
@@ -115,13 +119,13 @@ export const genItemClass = (sgNode: SgNode, enumArr: EnumItem[], hasObserved: b
   return (
     `${observedStr}export class ${createModel(className!)} implements ${className} {\n` +
     propertyStr +
-    "\n" +
-    constructorStr +
+    (simple ? '' : "\n") +
+    (simple ? '' : constructorStr) +
     `}\n`
   );
 };
 
-export const genClass = (code: string) => {
+export const genClass = (code: string, simple: boolean = false) => {
   const ast = ts.parse(code);
 
   const root = ast.root();
@@ -156,7 +160,7 @@ export const genClass = (code: string) => {
       }
     }
     // create new class
-    return genItemClass(item, enumArr, hasObserved);
+    return genItemClass(item, enumArr, hasObserved, simple);
   });
 
   if (!/\n$/.test(code)) {

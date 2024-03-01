@@ -42,6 +42,11 @@ interface User {
 i2c ./demo.ts
 ```
 
+```shell
+# 不生成构造器
+i2c simple ./demo.ts
+```
+
 - 自动写入 `demo.ts`
 
 ```typescript

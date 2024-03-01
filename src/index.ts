@@ -15,7 +15,7 @@ program.argument("<file path>").action((filePath) => {
   try {
     console.log(pc.magenta("◐"), "Class Generate ...");
     const str = fse.readFileSync(filePath, "utf8");
-    const formatStr = formatInterface(str)
+    const formatStr = formatInterface(str);
     const result = genClass(formatStr);
     fse.writeFileSync(filePath, result);
     console.log(pc.green("✔"), `Class Generate Successful`);
@@ -23,6 +23,22 @@ program.argument("<file path>").action((filePath) => {
     console.log(pc.bgRed("Error"), pc.red((e as Error).message || "Class Generate Fail"));
   }
 });
+
+program
+  .command("simple")
+  .argument("<file path>")
+  .action((filePath) => {
+    try {
+      console.log(pc.magenta("◐"), "Class Generate ...");
+      const str = fse.readFileSync(filePath, "utf8");
+      const formatStr = formatInterface(str);
+      const result = genClass(formatStr, true);
+      fse.writeFileSync(filePath, result);
+      console.log(pc.green("✔"), `Class Generate Successful`);
+    } catch (e) {
+      console.log(pc.bgRed("Error"), pc.red((e as Error).message || "Class Generate Fail"));
+    }
+  });
 
 program
   .command("format")
